@@ -1,5 +1,6 @@
 import time
 import random
+
 RAW_DATA_STORAGE = []
 def process_and_save ( sensor_id , value ):
 global RAW_DATA_STORAGE
