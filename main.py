@@ -191,6 +191,12 @@ def main_loop():
             # Mostrar estado del almacenamiento
             print(f"Almacenamiento: {storage.get_size()}/{MAX_SIZE} registros\n")
             
+            # DETENER cuando se alcance MAX_SIZE registros
+            if storage.get_size() >= MAX_SIZE:
+                print(f"Se alcanzó el límite de {MAX_SIZE} registros.")
+                print(f"Monitoreo completado.")
+                break
+            
             time.sleep(SLEEP_TIME)
     
     except KeyboardInterrupt:
