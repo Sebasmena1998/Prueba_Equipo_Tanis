@@ -5,7 +5,7 @@ from collections import deque
 # ============================================================================
 # CONFIGURACIÓN
 # ============================================================================
-MAX_SIZE = 1000
+MAX_SIZE = 100
 SENSORS = ["TORQUE", "RPM", "PUMP_PRES"]
 SLEEP_TIME = 0.1
 
@@ -14,31 +14,20 @@ SLEEP_TIME = 0.1
 # MÓDULO 1: ALMACENAMIENTO (Storage)
 # ============================================================================
 class DataStorage:
-    """Gestiona el almacenamiento eficiente de datos de sensores."""
     
     def __init__(self, max_size=MAX_SIZE):
-        """Inicializa el almacenamiento con un límite de tamaño."""
         self.storage = deque(maxlen=max_size)
     
     def add_entry(self, entry):
-        """
-        Añade una entrada de dato al almacenamiento.
-        
-        Args:
-            entry (dict): Entrada con id, val y ts
-        """
         self.storage.append(entry)
     
     def get_all(self):
-        """Retorna todos los datos almacenados."""
         return list(self.storage)
     
     def get_size(self):
-        """Retorna la cantidad de registros almacenados."""
         return len(self.storage)
     
     def clear(self):
-        """Limpia todos los datos del almacenamiento."""
         self.storage.clear()
 
 
@@ -49,30 +38,16 @@ class DataAcquisition:
     """Simula la lectura de sensores y adquiere datos."""
     
     def __init__(self, sensors):
-        """
-        Inicializa con la lista de sensores disponibles.
-        
-        Args:
-            sensors (list): Lista de identificadores de sensores
-        """
         self.sensors = sensors
     
     def acquire_sensor_data(self, sensor_id):
-        """
-        Simula la lectura de datos de un sensor individual.
-        
-        Args:
-            sensor_id (str): Identificador del sensor
-            
-        Returns:
-            dict: Diccionario con sensor_id y value
-        """
+
         try:
             # Simular lectura (incluye None para pruebas)
             value = random.choice([100.5, 200.8, None, 150.2])
             return {"sensor_id": sensor_id, "value": value}
         except Exception as e:
-            print(f"❌ Error en adquisición de sensor {sensor_id}: {e}")
+            print(f"Error en adquisición de sensor {sensor_id}: {e}")
             return None
     
     def acquire_all_sensors(self):
@@ -98,17 +73,6 @@ class DataProcessor:
     
     @staticmethod
     def validate_data(sensor_id, value):
-        """
-        Valida que los datos sean correctos.
-        
-        Args:
-            sensor_id (str): Identificador del sensor
-            value: Valor a validar
-            
-        Raises:
-            TypeError: Si el tipo es incorrecto
-            ValueError: Si el valor es inválido
-        """
         # Validar sensor_id
         if not isinstance(sensor_id, str):
             raise TypeError(f"sensor_id debe ser string, recibido: {type(sensor_id).__name__}")
@@ -130,16 +94,6 @@ class DataProcessor:
     
     @staticmethod
     def create_entry(sensor_id, value):
-        """
-        Crea una entrada de datos validada.
-        
-        Args:
-            sensor_id (str): Identificador del sensor
-            value: Valor del sensor
-            
-        Returns:
-            dict: Entrada con id, val y ts
-        """
         DataProcessor.validate_data(sensor_id, value)
         return {
             "id": sensor_id,
@@ -149,15 +103,6 @@ class DataProcessor:
     
     @staticmethod
     def calculate_average(storage):
-        """
-        Calcula el promedio de valores válidos.
-        
-        Args:
-            storage (DataStorage): Instancia de almacenamiento
-            
-        Returns:
-            dict: Estadísticas con promedio, cantidad y total
-        """
         data = storage.get_all()
         total = 0
         count = 0
@@ -202,16 +147,16 @@ def process_and_save(storage, processor, acquisition, sensor_id, value):
         stats = processor.calculate_average(storage)
         
         if stats["average"] is not None:
-            print(f"✅ Sensor {sensor_id} - Promedio: {stats['average']:.2f} (n={stats['count']})")
+            print(f"Sensor {sensor_id} - Promedio: {stats['average']:.2f} (n={stats['count']})")
         else:
-            print(f"⚠️  Sensor {sensor_id} - Sin datos válidos")
+            print(f"Sensor {sensor_id} - Sin datos válidos")
     
     except TypeError as e:
-        print(f"❌ ERROR de tipo en sensor {sensor_id}: {e}")
+        print(f"ERROR de tipo en sensor {sensor_id}: {e}")
     except ValueError as e:
-        print(f"❌ ERROR de valor en sensor {sensor_id}: {e}")
+        print(f"ERROR de valor en sensor {sensor_id}: {e}")
     except Exception as e:
-        print(f"❌ ERROR inesperado en sensor {sensor_id}: {e}")
+        print(f"ERROR inesperado en sensor {sensor_id}: {e}")
 
 
 # ============================================================================
@@ -225,7 +170,7 @@ def main_loop():
     acquisition = DataAcquisition(SENSORS)
     processor = DataProcessor()
     
-    print(f"🚀 Iniciando monitoreo de {len(SENSORS)} sensores...\n")
+    print(f"Iniciando monitoreo de {len(SENSORS)} sensores...\n")
     
     try:
         while True:
@@ -244,15 +189,15 @@ def main_loop():
                     )
             
             # Mostrar estado del almacenamiento
-            print(f"📊 Almacenamiento: {storage.get_size()}/{MAX_SIZE} registros\n")
+            print(f"Almacenamiento: {storage.get_size()}/{MAX_SIZE} registros\n")
             
             time.sleep(SLEEP_TIME)
     
     except KeyboardInterrupt:
-        print("\n✅ Programa interrumpido por el usuario")
-        print(f"📈 Total de registros procesados: {storage.get_size()}")
+        print("\nPrograma interrumpido por el usuario")
+        print(f"Total de registros procesados: {storage.get_size()}")
     except Exception as e:
-        print(f"❌ Error crítico en main_loop: {e}")
+        print(f"Error crítico en main_loop: {e}")
 
 
 if __name__ == "__main__":
