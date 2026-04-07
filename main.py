@@ -1,68 +1,68 @@
 import time
 import random
-from collections import deque
+from collections import deque, defaultdict
 
-# Límite máximo de registros en memoria
-MAX_SIZE = 1000
+# Límite por sensor (restricción RAM)
+MAX_SIZE = 100
 
-# Estructura eficiente con tamaño limitado
-RAW_DATA_STORAGE = deque(maxlen=MAX_SIZE)
+# Estructura por sensor (dinámica y escalable)
+RAW_DATA_STORAGE = defaultdict(lambda: deque(maxlen=MAX_SIZE))
+
+# Métricas O(1) por sensor
+RUNNING_SUM = defaultdict(float)
+COUNT = defaultdict(int)
 
 def process_and_save(sensor_id, value):
     """
-    Procesa y guarda datos de sensores con validación y manejo de excepciones.
-    
-    Args:
-        sensor_id (str): Identificador del sensor
-        value (float): Valor del sensor
-        
-    Raises:
-        TypeError: Si el tipo de dato es incorrecto
-        ValueError: Si el valor es None o inválido
+    Procesa y guarda datos de sensores con validación, manejo de excepciones
+    y cálculo de promedio en O(1).
     """
-    global RAW_DATA_STORAGE
+    global RAW_DATA_STORAGE, RUNNING_SUM, COUNT
 
     try:
-        # Validar que sensor_id sea string
+        # Validaciones
         if not isinstance(sensor_id, str):
             raise TypeError(f"sensor_id debe ser string, recibido: {type(sensor_id).__name__}")
         
-        # Validar que value no sea None
         if value is None:
             raise ValueError("El valor del sensor no puede ser None")
         
-        # Validar que value sea numérico
         if not isinstance(value, (int, float)):
             raise TypeError(f"value debe ser numérico (int/float), recibido: {type(value).__name__}")
         
-        # Validar que no sea NaN o infinito
         if isinstance(value, float):
-            if value != value:  # NaN check
+            if value != value:  # NaN
                 raise ValueError("El valor no puede ser NaN")
             if value == float('inf') or value == float('-inf'):
                 raise ValueError("El valor no puede ser infinito")
-        
+
         timestamp = time.time()
         entry = {"id": sensor_id, "val": value, "ts": timestamp}
-        RAW_DATA_STORAGE.append(entry)
-        
-        # Calcular promedio solo con valores válidos
-        total = 0
-        count = 0
-        for item in RAW_DATA_STORAGE:
+
+        sensor_queue = RAW_DATA_STORAGE[sensor_id]
+
+        # Ajuste si se va a eliminar un elemento (por límite)
+        if len(sensor_queue) == MAX_SIZE:
+            removed = sensor_queue[0]
             try:
-                if isinstance(item["val"], (int, float)) and item["val"] is not None:
-                    total += item["val"]
-                    count += 1
+                RUNNING_SUM[sensor_id] -= removed["val"]
+                COUNT[sensor_id] -= 1
             except (KeyError, TypeError):
-                continue
-        
-        if count > 0:
-            avg = total / count
+                pass
+
+        # Insertar nuevo dato
+        sensor_queue.append(entry)
+
+        RUNNING_SUM[sensor_id] += value
+        COUNT[sensor_id] += 1
+
+        # Promedio en O(1)
+        if COUNT[sensor_id] > 0:
+            avg = RUNNING_SUM[sensor_id] / COUNT[sensor_id]
             print(f"Sensor {sensor_id} - Promedio Actual: {avg:.2f}")
         else:
             print(f"Sensor {sensor_id} - Sin datos válidos para calcular promedio")
-    
+
     except TypeError as e:
         print(f"❌ ERROR de tipo en sensor {sensor_id}: {e}")
     except ValueError as e:
@@ -80,7 +80,6 @@ def main_loop():
         while True:
             for s in sensors:
                 try:
-                    # Generar valor aleatorio (incluye None para pruebas de excepciones)
                     val = random.choice([100.5, 200.8, None, 150.2])
                     process_and_save(s, val)
                     time.sleep(0.1)
